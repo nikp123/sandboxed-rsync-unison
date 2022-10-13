@@ -1,0 +1,15 @@
+version: '3'
+services:
+  ssh_jail:
+    image: isolated_rsync
+    build: .
+    container_name: isolated_rsync
+    restart: always
+    volumes:
+      - ./users:/users
+      - ./keys:/keys
+    environment:
+      - USERS=nikp123:1000
+    ports:
+      - "22:22"
+

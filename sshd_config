@@ -1,0 +1,16 @@
+Port 22
+PrintMotd no
+AllowAgentForwarding no
+AllowTcpForwarding no
+X11Forwarding no
+PasswordAuthentication no
+PermitRootLogin no
+PubkeyAuthentication no
+AuthorizedKeysFile .ssh/authorized_keys
+PermitTTY yes
+KbdInteractiveAuthentication no
+
+Match Group sshjail
+    PubkeyAuthentication yes
+
+
