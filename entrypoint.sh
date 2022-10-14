@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[ ! -n $DEBUG ] && set -x 
+[ "$DEBUG" == 'true' ] && set -x 
 
 # Kill container
 trap 'kill $1; exit 0' SIGTERM
@@ -10,11 +10,38 @@ USER_HOME="/users"
 SSH_KEY_DIR="/keys"
 SSH_GROUP="sshjail"
 SSH_RESTRICT_EXECUTABLE="/usr/local/bin/restrict"
+EXTERNAL_USER_NAME="external"
 
 if [ ! -n "${USERS}" ]; then
     echo "ERROR: No users defined!"
     exit -1
 fi
+
+if [ ! -n "${EXTERNAL_USER}" ]; then
+    echo "ERROR: No external user defined!"
+    exit -1
+fi
+
+# Add external user
+IFS=':' read -ra UA <<< "$EXTERNAL_USER"
+EXTERNAL_UID=${UA[0]}
+EXTERNAL_GID=${UA[1]}
+
+if [ ${#UA[*]} -ge 2 ]; then
+    EXTERNAL_GID=${UA[1]}
+    groupdel ${EXTERNAL_USER_NAME}
+    groupadd -o -g ${EXTERNAL_GID} ${EXTERNAL_USER_NAME}
+    GID_ARGS="--gid ${EXTERNAL_GID}"
+else
+    EXTERNAL_GID=${EXTERNAL_USER_NAME}
+    GID_ARGS="-U"
+fi
+
+# Add external user
+useradd -M \
+    --uid $EXTERNAL_UID $GID_ARGS \
+    -s $SSH_SHELL \
+    ${EXTERNAL_USER_NAME}
 
 # User processing
 USERS_SEPERATED=$(echo $USERS | tr "," "\n")
@@ -49,7 +76,7 @@ for USER in $USERS_SEPERATED; do
 
     if [ ! -f $USER_HOME/$_NAME ]; then
       mkdir $USER_HOME/$_NAME
-      chown $_UID:$_GID $USER_HOME/$_NAME
+      chown $EXTERNAL_UID:$EXTERNAL_GID $USER_HOME/$_NAME
     fi 
 
     # Check for keys
@@ -57,6 +84,9 @@ for USER in $USERS_SEPERATED; do
         echo "SSH key for user $_NAME missing! Aborting..."
         exit -1
     fi
+
+    # FUSE dark magic bind mount
+    bindfs -u $_UID -g $_GID --create-for-user=${EXTERNAL_USER_NAME} /users/$user /users/$user
 
     # Create SSH stuff
     if [ ! -f $USER_HOME/$_NAME/.ssh ]; then
@@ -88,7 +118,7 @@ done
 [ -n $SSH_HOST_KEY_EXISTS ] && /usr/bin/ssh-keygen -A
 
 SSH_FLAGS=""
-if [ ! -n $DEBUG ]; then
+if [ "$DEBUG" == 'true' ]; then
     SSH_FLAGS="$SSH_FLAGS -d"
 fi
 

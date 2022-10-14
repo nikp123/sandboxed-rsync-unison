@@ -1,13 +1,11 @@
-# Latest "stable" release
-FROM alpine:latest
-
 # Unstable version
-#FROM alpine:edge
+FROM alpine:edge
+
 # Add testing repo
-#RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories
+RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories
+
 # Add bindfs
-#RUN apk add --no-cache bindfs
-#bindfs -u $UID -g $GID --create-for-user=$EXTERNAL_USER /users/$user /home/$user
+RUN apk add --no-cache bindfs
 
 #
 # Compile and install restrictive shell

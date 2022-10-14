@@ -5,11 +5,17 @@ services:
     build: .
     container_name: isolated_rsync
     restart: always
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse:/dev/fuse
     volumes:
       - ./users:/users
       - ./keys:/keys
     environment:
       - USERS=nikp123:1000
+      - EXTERNAL_USER=123
+      - DEBUG=false
     ports:
       - "22:22"
 
